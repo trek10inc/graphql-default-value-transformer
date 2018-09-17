@@ -13,6 +13,10 @@
     "appsync",
     "aws"
   ],
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/trek10inc/graphql-default-value-transformer.git"
+  },
   "author": "Jared Short",
   "license": "MIT",
   "dependencies": {
