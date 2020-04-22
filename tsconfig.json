@@ -1,18 +1,21 @@
 {
+    "compileOnSave": true,
     "compilerOptions": {
-        "target": "es5",
-        "module": "commonjs",
-        "sourceMap": true,
-        "outDir": "lib",
-        "lib": [
-            "es2015",
-            "es2016.array.include",
-            "esnext.asynciterable",
-            "dom"
-        ]
+      "target": "es2018",
+      "module": "commonjs",
+      "lib": [
+          "es2018",
+          "esnext.bigint"
+      ],
+      "declaration": true,
+      "sourceMap": true,
+      "outDir": "./lib",
+      "noImplicitAny": true,
+      "strict": true,
+      "types": ["node", "jest"]
     },
     "exclude": [
-        "node_modules",
-        "lib"
+      "lib",
+      "node_modules"
     ]
-}
+  }

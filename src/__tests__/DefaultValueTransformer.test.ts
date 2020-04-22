@@ -1,47 +1,45 @@
-import {
-    ObjectTypeDefinitionNode, parse, DocumentNode,
-    Kind, InputObjectTypeDefinitionNode, FieldDefinitionNode
-} from 'graphql'
-import GraphQLTransform from 'graphql-transformer-core'
-import { ResourceConstants, ResolverResourceIDs, ModelResourceIDs } from 'graphql-transformer-common'
+// import { parse } from 'graphql'
+// import { ResourceConstants, ResolverResourceIDs, ModelResourceIDs } from 'graphql-transformer-common'
+import { GraphQLTransform } from 'graphql-transformer-core'
 import { DefaultValueTransformer } from '../DefaultValueTransformer'
-import AppSyncTransformer from 'graphql-appsync-transformer'
-import DynamoDBModelTransformer from 'graphql-dynamodb-transformer'
-import { findAddedNonNullDirectiveArgs } from 'graphql/utilities/findBreakingChanges';
+import { DynamoDBModelTransformer } from 'graphql-dynamodb-transformer'
+import { GraphQLTransformOptions } from 'graphql-transformer-core/lib/GraphQLTransform'
 
-const getType = (schemaDoc: DocumentNode) => (name: string): ObjectTypeDefinitionNode =>
-    schemaDoc.definitions.find(d => d.kind !== Kind.SCHEMA_DEFINITION ? d.name.value === name : false) as ObjectTypeDefinitionNode
-const getField = (input: ObjectTypeDefinitionNode, field: string) => input.fields.find(f => f.name.value === field)
+
 
 test('Test DefaultValueTransformer validation happy case', () => {
-    const validSchema = `
+    const validSchema: string = `
     type Post @model {
         id: ID!
         title: String @default(value: "hello world")
         viewCount: Int @default(value: "9001")
         createdAt: String
         updatedAt: String
+        tag: Tag @default(value: "RANDOM")
+    }
+    enum Tag {
+        NEWS
+        RANDOM
     }
     `
-    const transformer = new GraphQLTransform({
+
+    const options: GraphQLTransformOptions = {
         transformers: [
-            new AppSyncTransformer(),
             new DynamoDBModelTransformer(),
             new DefaultValueTransformer()
         ]
-    })
+    };
+    const transformer = new GraphQLTransform(options)
     const out = transformer.transform(validSchema);
-    // tslint:disable-next-line
-    const schemaDoc = parse(out.Resources[ResourceConstants.RESOURCES.GraphQLSchemaLogicalID].Properties.Definition)
-    expect(out).toBeDefined()
-    expect(getField(getType(schemaDoc)('Post'), 'title')).toBeDefined()
 
-    const postCreateMappingTemplate = out.Resources[ResolverResourceIDs.DynamoDBCreateResolverResourceID('Post')].Properties.RequestMappingTemplate;
+    expect(out).toBeDefined()
+
+    const postCreateMappingTemplate = out.resolvers['Mutation.createPost.req.vtl'];
     const titleSnippet = `#if( $util.isNull($ctx.args.input.viewCount) )
-$util.qr($ctx.args.input.put("viewCount", 9001))
+  $util.qr($ctx.args.input.put("viewCount", 9001))
 #end`
     const viewCountSnippet = `#if( $util.isNull($ctx.args.input.title) )
-$util.qr($ctx.args.input.put("title", "hello world"))
+  $util.qr($ctx.args.input.put("title", "hello world"))
 #end`
 
     expect(postCreateMappingTemplate).toContain(titleSnippet)
